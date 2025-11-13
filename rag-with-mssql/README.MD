@@ -111,7 +111,7 @@ You should now be in the `rag-with-mssql` directory, ready to proceed with the r
 ### 2. Create a Virtual Environment (Recommended)
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
 
 Activate the virtual environment:
@@ -144,28 +144,32 @@ This will install all required packages including:
    - In Azure Portal, navigate to your SQL Server
    - Under "Settings" → "Azure Active Directory", configure authentication
 
-2. **Create a database user**:
+2. **Create a database user and grant necessary permissions**:
+
+   ```bash
+   sqlcmd -S <your-server-name>.database.windows.net -d master -U <admin-username> -P <admin-password>
+   ```
+
    ```sql
    CREATE LOGIN <login> WITH PASSWORD = '<password>';
    GO
-
-   USE [<your-database>];
-   GO
-
-   CREATE USER <user> FROM LOGIN <login>;
-   GO
+   EXIT
    ```
 
-3. **Grant necessary permissions**:
+   ```bash
+   sqlcmd -S <your-server-name>.database.windows.net -d <your-database>er -U <admin-username> -P <admin-password>
+   ```
+
    ```sql
-   USE [<your-database>];
+   
+   CREATE USER <user> FROM LOGIN <login>;
    GO
 
    ALTER ROLE db_owner ADD MEMBER [<user>];
    GO
    ```
 
-4. **Configure firewall rules**:
+3. **Configure firewall rules**:
    - In Azure Portal, add your client IP address to the SQL Server firewall rules
 
 #### For On-Premises SQL Server:
