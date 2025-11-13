@@ -50,6 +50,8 @@ from langgraph.prebuilt import ToolNode
 # Get environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT")
+OPENAI_EMBEDDING_API_KEY = os.getenv("OPENAI_EMBEDDING_API_KEY")
+OPENAI_EMBEDDING_ENDPOINT = os.getenv("OPENAI_EMBEDDING_ENDPOINT")
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
 MSSQL_CONNECTION_STRING = os.getenv("MSSQL_CONNECTION_STRING")
@@ -158,8 +160,8 @@ print("Configuring vector store...")
 vector_store = SQLServer_VectorStore(
     embedding_function=OpenAIEmbeddings(
         model=OPENAI_EMBEDDING_MODEL,
-        # api_key=OPENAI_API_KEY,
-        # base_url=OPENAI_ENDPOINT,
+        api_key=OPENAI_EMBEDDING_API_KEY,
+        base_url=OPENAI_EMBEDDING_ENDPOINT
     ),
     embedding_length=1536,
     connection_string=MSSQL_CONNECTION_STRING,

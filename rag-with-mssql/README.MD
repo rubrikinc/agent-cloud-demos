@@ -190,9 +190,11 @@ Edit `.env.demo` (or your chosen environment name) with your actual configuratio
 
 ```bash
 # OpenAI Configuration
-OPENAI_API_KEY="sk-your-actual-openai-api-key"
-OPENAI_ENDPOINT="https://api.openai.com/v1"
+OPENAI_API_KEY="your-rubrik-agent-cloud-api-key"
+OPENAI_ENDPOINT="your-rubrik-agent-cloud-endpoint"
 OPENAI_MODEL="gpt-4o"
+OPENAI_EMBEDDING_API_KEY="your-actual-openai-api-key"
+OPENAI_EMBEDDING_ENDPOINT="https://api.openai.com/v1"
 OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
 
 # Application Configuration
@@ -223,9 +225,11 @@ MSSQL_CONNECTION_STRING='Driver={ODBC Driver 18 for SQL Server};Server=<your-ser
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `OPENAI_API_KEY` | Your OpenAI API key for authentication | `sk-proj-...` |
-| `OPENAI_ENDPOINT` | OpenAI API endpoint URL | `https://api.openai.com/v1` |
-| `OPENAI_MODEL` | Chat completion model to use | `gpt-4o`, `gpt-4-turbo` |
+| `OPENAI_API_KEY` | The API key for Rubrik Agent Cloud Model Router| `pb-...` |
+| `OPENAI_ENDPOINT` | The API endpoint for Rubrik Agent Cloud Model Router | `https://aigateways...` |
+| `OPENAI_MODEL` | Chat completion model to use. This should match what you have configured in Rubrik Agent Cloud | `gpt-4o` |
+| `OPENAI_EMBEDDING_API_KEY` | Your OpenAI API key for authentication | `sk-proj-...` |
+| `OPENAI_EMBEDDING_ENDPOINT` | OpenAI API endpoint URL | `https://api.openai.com/v1` |
 | `OPENAI_EMBEDDING_MODEL` | Embedding model for vector generation | `text-embedding-3-small` |
 | `TABLE_NAME` | SQL table name for vector storage | `lilian_weng_blog_posts` |
 | `MSSQL_CONNECTION_STRING` | ODBC connection string for SQL Server | See options above |
