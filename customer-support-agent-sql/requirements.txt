@@ -1,0 +1,12 @@
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+
+# Database connectivity
+pyodbc>=5.0.0
+
+# Progress bar for visual feedback
+tqdm>=4.66.0
