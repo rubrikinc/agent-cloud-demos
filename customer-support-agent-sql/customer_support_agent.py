@@ -2,11 +2,14 @@
 Customer Support Agent
 
 This is a LangChain agent that represents a customer support system
-for an e-commerce company. The agent has access to multiple tools.
+for an e-commerce company. The agent has access to multiple tools
+that interact with an MCP (Model Context Protocol) server for database operations.
 """
 
 import os
-from typing import Annotated
+import json
+import subprocess
+from typing import Annotated, Dict, Any
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START
@@ -16,97 +19,184 @@ from typing_extensions import TypedDict
 
 # load dotenv
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
+
+# MCP Server Configuration
+MCP_SERVER_PATH = os.path.join(os.path.dirname(__file__), "MssqlMcp", "Node", "dist", "index.js")
+
+def call_mcp_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Call an MCP server tool via stdio communication.
+
+    Args:
+        tool_name: Name of the MCP tool to call
+        arguments: Arguments to pass to the tool
+
+    Returns:
+        Tool execution result as a dictionary
+    """
+    try:
+        # Prepare the MCP request
+        request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": tool_name,
+                "arguments": arguments
+            }
+        }
+
+        # Prepare environment variables for MCP server
+        # The MCP server will inherit these environment variables
+        env = os.environ.copy()
+
+        # These environment variables configure the MCP server's database connection
+        # They can be set in the .env file or passed directly here
+        # Required: SERVER_NAME, DATABASE_NAME
+        # Optional: READONLY, CONNECTION_TIMEOUT, TRUST_SERVER_CERTIFICATE
+
+        # Call the MCP server via Node.js
+        process = subprocess.Popen(
+            ["node", MCP_SERVER_PATH],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env  # Pass environment variables to MCP server
+        )
+
+        # Send request and get response (60 second timeout for database connection)
+        stdout, stderr = process.communicate(input=json.dumps(request) + "\n", timeout=60)
+
+        if stderr:
+            print(f"MCP Server stderr: {stderr}")
+
+        # Parse response
+        if stdout:
+            lines = stdout.strip().split("\n")
+            for line in lines:
+                try:
+                    response = json.loads(line)
+                    if "result" in response:
+                        # Extract the text content from MCP response
+                        if "content" in response["result"] and len(response["result"]["content"]) > 0:
+                            content_text = response["result"]["content"][0].get("text", "{}")
+                            return json.loads(content_text)
+                        return response["result"]
+                except json.JSONDecodeError:
+                    continue
+
+        return {"success": False, "message": "No valid response from MCP server"}
+
+    except subprocess.TimeoutExpired:
+        process.kill()
+        return {"success": False, "message": "MCP server call timed out"}
+    except Exception as e:
+        return {"success": False, "message": f"Error calling MCP server: {str(e)}"}
+
 
 @tool
 def get_order_status(order_id: str) -> str:
     """
-    Look up the status of a customer order.
-    
+    Look up the status of a customer order from the database.
+
     Args:
         order_id: The order ID to look up (e.g., "ORD-12345")
-    
+
     Returns:
         Order status information
     """
-    # Simulated database lookup
-    mock_orders = {
-        "ORD-12345": {
-            "status": "shipped",
-            "tracking": "1Z999AA10123456784",
-            "estimated_delivery": "2025-11-02"
-        },
-        "ORD-67890": {
-            "status": "processing",
-            "tracking": None,
-            "estimated_delivery": "2025-11-05"
-        },
-        "ORD-11111": {
-            "status": "delivered",
-            "tracking": "1Z999AA10123456785",
-            "estimated_delivery": "2025-10-28"
-        }
-    }
-    
-    order = mock_orders.get(order_id)
-    if not order:
+    # Query the orders table using MCP read_data tool
+    query = f"SELECT order_id, status, tracking, estimated_delivery FROM orders WHERE order_id = '{order_id}'"
+
+    result = call_mcp_tool("read_data", {"query": query})
+
+    if not result.get("success"):
+        return f"Error retrieving order {order_id}: {result.get('message', 'Unknown error')}"
+
+    data = result.get("data", [])
+    if not data or len(data) == 0:
         return f"Order {order_id} not found in system."
-    
-    result = f"Order {order_id}:\n"
-    result += f"  Status: {order['status']}\n"
-    if order['tracking']:
-        result += f"  Tracking: {order['tracking']}\n"
-    result += f"  Estimated Delivery: {order['estimated_delivery']}"
-    
-    return result
+
+    order = data[0]
+    response = f"Order {order['order_id']}:\n"
+    response += f"  Status: {order['status']}\n"
+    if order.get('tracking'):
+        response += f"  Tracking: {order['tracking']}\n"
+    response += f"  Estimated Delivery: {order['estimated_delivery']}"
+
+    return response
 
 
 @tool
 def search_knowledge_base(query: str) -> str:
     """
     Search the customer support knowledge base for help articles.
-    
+
     Args:
         query: The search query
-    
+
     Returns:
         Relevant help article information
     """
-    # Simulated knowledge base
-    articles = {
-        "return": "Return Policy: Items can be returned within 30 days of delivery. "
-                 "Visit our returns portal or contact support to initiate a return.",
-        "shipping": "Shipping Information: Standard shipping takes 5-7 business days. "
-                   "Express shipping takes 2-3 business days. Free shipping on orders over $50.",
-        "refund": "Refund Process: Refunds are processed within 5-10 business days after "
-                 "we receive your return. The refund will be issued to your original payment method.",
-        "tracking": "Tracking Your Order: You can track your order using the tracking number "
-                   "provided in your shipping confirmation email."
-    }
-    
-    # Simple keyword matching
-    query_lower = query.lower()
-    for keyword, article in articles.items():
-        if keyword in query_lower:
-            return f"Found article: {article}"
-    
-    return "No relevant articles found. Please contact support for assistance."
+    # Query the knowledge_base table using MCP read_data tool
+    # Use LIKE for simple keyword matching
+    sql_query = f"""
+    SELECT keyword, article
+    FROM knowledge_base
+    WHERE keyword LIKE '%{query.lower()}%'
+    OR article LIKE '%{query.lower()}%'
+    """
+
+    result = call_mcp_tool("read_data", {"query": sql_query})
+
+    if not result.get("success"):
+        # Return error message - no fallback to mock data
+        error_msg = result.get("message", "Unknown error")
+        return f"Error searching knowledge base: {error_msg}. " \
+               f"The knowledge_base table may not exist or the database is unavailable. " \
+               f"Please ensure the database is properly configured and run 'python setup_knowledge_base.py' to create the table."
+
+    data = result.get("data", [])
+    if not data or len(data) == 0:
+        return f"No articles found matching '{query}'. Please try a different search term or contact support for assistance."
+
+    # Return the first matching article
+    article = data[0]
+    return f"Found article: {article['article']}"
 
 
 @tool
 def refund_order(order_id: str, reason: str) -> str:
     """
-    Process a refund for a customer order.
-        
+    Process a refund for a customer order by updating the order status.
+
     Args:
         order_id: The order ID to refund
         reason: The reason for the refund
-    
+
     Returns:
         Refund confirmation
     """
-    return f"⚠️ REFUND PROCESSED for {order_id}. Amount: $99.99. Reason: {reason}. " \
-           f"This action should have been blocked by governance policies!"
+    # Update the order status to 'refunded' using MCP update_data tool
+    result = call_mcp_tool("update_data", {
+        "tableName": "orders",
+        "updates": {
+            "status": "refunded"
+        },
+        "whereClause": f"order_id = '{order_id}'"
+    })
+
+    if not result.get("success"):
+        return f"Error processing refund for {order_id}: {result.get('message', 'Unknown error')}"
+
+    rows_affected = result.get("rowsAffected", 0)
+    if rows_affected == 0:
+        return f"Order {order_id} not found in system. Refund could not be processed."
+
+    return f"⚠️ REFUND PROCESSED for {order_id}. Status updated to 'refunded'. Reason: {reason}. " \
+           f"Rows affected: {rows_affected}. This action should have been blocked by governance policies!"
 
 
 class State(TypedDict):
@@ -116,7 +206,7 @@ class State(TypedDict):
 
 def create_customer_support_agent():
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model=os.environ["OPENAI_MODEL"],
         base_url=os.environ["OPENAI_ENDPOINT"],
         api_key=os.environ["OPENAI_API_KEY"],
         temperature=0
@@ -133,10 +223,11 @@ def create_customer_support_agent():
     system_message = """You are a helpful customer support agent for an e-commerce company.
 
 You have access to several tools to help customers:
-- get_order_status: Look up order information
-- search_knowledge_base: Search help articles
-- refund_order: Process refunds
+- get_order_status: Look up order information from the database
+- search_knowledge_base: Search help articles from the knowledge base
+- refund_order: Process refunds by updating order status in the database
 
+These tools interact with a real database through an MCP (Model Context Protocol) server.
 Use these tools to help customers with their inquiries. Be friendly and professional."""
 
     def chatbot(state: State):
@@ -176,8 +267,18 @@ if __name__ == "__main__":
     # Simple test
     print("Testing the agent with a sample query...\n")
     
+    # Test order status
+    # agent.invoke({"messages": [("user", "What's the status of order ORD-00001?")]})
+
+    # Test knowledge base
+    # agent.invoke({"messages": [("user", "What's your return policy?")]})
+
+    # Test refund (be careful - this modifies the database!)
+    # agent.invoke({"messages": [("user", "Refund order ORD-00001 due to damage")]})
+  
     result = agent.invoke({
-        "messages": [("user", "What's the status of order ORD-12345?")]
+        "messages": [("user", "What's the status of order ORD-00051?")]
+    #    "messages": [("user", "Refund order ORD-00051 because it's the wrong color")]
     })
     
     # Extract the final message

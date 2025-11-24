@@ -29,8 +29,146 @@ let globalSqlPool: sql.ConnectionPool | null = null;
 let globalAccessToken: string | null = null;
 let globalTokenExpiresOn: Date | null = null;
 
+/**
+ * Parse ODBC connection string into key-value pairs
+ * Example: "Server=localhost;Database=mydb;UID=user;PWD=pass;"
+ * Returns: { Server: "localhost", Database: "mydb", UID: "user", PWD: "pass" }
+ */
+function parseOdbcConnectionString(connectionString: string): Record<string, string> {
+  const params: Record<string, string> = {};
+
+  // Split by semicolon and process each key=value pair
+  const parts = connectionString.split(';').filter(part => part.trim());
+
+  for (const part of parts) {
+    const equalIndex = part.indexOf('=');
+    if (equalIndex > 0) {
+      const key = part.substring(0, equalIndex).trim();
+      const value = part.substring(equalIndex + 1).trim();
+      params[key] = value;
+    }
+  }
+
+  return params;
+}
+
+/**
+ * Convert ODBC connection string to mssql config object
+ */
+function odbcToMssqlConfig(connectionString: string): sql.config {
+  const params = parseOdbcConnectionString(connectionString);
+
+  // Extract common parameters (case-insensitive lookup)
+  const getParam = (keys: string[]): string | undefined => {
+    for (const key of keys) {
+      const value = Object.keys(params).find(k => k.toLowerCase() === key.toLowerCase());
+      if (value) return params[value];
+    }
+    return undefined;
+  };
+
+  const server = getParam(['Server', 'Data Source', 'Address', 'Addr', 'Network Address']);
+  const database = getParam(['Database', 'Initial Catalog']);
+  const user = getParam(['UID', 'User ID', 'User']);
+  const password = getParam(['PWD', 'Password']);
+  const trustedConnection = getParam(['Trusted_Connection', 'Integrated Security'])?.toLowerCase() === 'yes' ||
+                           getParam(['Trusted_Connection', 'Integrated Security'])?.toLowerCase() === 'true';
+  const encrypt = getParam(['Encrypt'])?.toLowerCase() !== 'no' && getParam(['Encrypt'])?.toLowerCase() !== 'false';
+  const trustServerCert = getParam(['TrustServerCertificate'])?.toLowerCase() === 'yes' ||
+                         getParam(['TrustServerCertificate'])?.toLowerCase() === 'true';
+  const connectionTimeout = getParam(['Connection Timeout', 'Connect Timeout']);
+
+  if (!server) {
+    throw new Error('ODBC connection string must contain Server parameter');
+  }
+
+  const config: sql.config = {
+    server: server,
+    options: {
+      encrypt: encrypt,
+      trustServerCertificate: trustServerCert,
+    },
+  };
+
+  if (database) {
+    config.database = database;
+  }
+
+  if (connectionTimeout) {
+    config.connectionTimeout = parseInt(connectionTimeout, 10) * 1000; // convert to milliseconds
+  }
+
+  // Authentication: SQL or Windows
+  if (user && password) {
+    // SQL Server authentication
+    config.user = user;
+    config.password = password;
+  } else if (trustedConnection) {
+    // Windows authentication
+    config.authentication = {
+      type: 'ntlm',
+      options: {
+        domain: '',
+        userName: '',
+        password: '',
+      },
+    };
+  }
+
+  return config;
+}
+
 // Function to create SQL config with fresh access token, returns token and expiry
-export async function createSqlConfig(): Promise<{ config: sql.config, token: string, expiresOn: Date }> {
+export async function createSqlConfig(): Promise<{ config: sql.config, token: string | null, expiresOn: Date | null }> {
+  // Priority 1: Check for ODBC connection string (supports SQL authentication)
+  const odbcConnectionString = process.env.MSSQL_CONNECTION_STRING;
+
+  if (odbcConnectionString) {
+    console.error('[MCP Server] Using ODBC connection string for SQL authentication');
+
+    try {
+      const config = odbcToMssqlConfig(odbcConnectionString);
+      return {
+        config,
+        token: null,
+        expiresOn: null
+      };
+    } catch (error) {
+      console.error('[MCP Server] Error parsing ODBC connection string:', error);
+      throw error;
+    }
+  }
+
+  // Priority 2: Check for SQL username/password authentication
+  const sqlUser = process.env.SQL_USER;
+  const sqlPassword = process.env.SQL_PASSWORD;
+
+  if (sqlUser && sqlPassword) {
+    console.error(`[MCP Server] Using SQL Server authentication for user: ${sqlUser}`);
+
+    const trustServerCertificate = process.env.TRUST_SERVER_CERTIFICATE?.toLowerCase() === 'true';
+    const connectionTimeout = process.env.CONNECTION_TIMEOUT ? parseInt(process.env.CONNECTION_TIMEOUT, 10) : 30;
+
+    return {
+      config: {
+        server: process.env.SERVER_NAME!,
+        database: process.env.DATABASE_NAME!,
+        user: sqlUser,
+        password: sqlPassword,
+        options: {
+          encrypt: true,
+          trustServerCertificate
+        },
+        connectionTimeout: connectionTimeout * 1000,
+      },
+      token: null,
+      expiresOn: null
+    };
+  }
+
+  // Priority 3: Fall back to Azure AD authentication (original behavior)
+  console.error('[MCP Server] Using Azure AD Interactive Browser authentication');
+
   const credential = new InteractiveBrowserCredential({
     redirectUri: 'http://localhost'
     // disableAutomaticAuthentication : true
@@ -164,28 +302,49 @@ runServer().catch((error) => {
 // Connect to SQL only when handling a request
 
 async function ensureSqlConnection() {
-  // If we have a pool and it's connected, and the token is still valid, reuse it
-  if (
-    globalSqlPool &&
-    globalSqlPool.connected &&
-    globalAccessToken &&
-    globalTokenExpiresOn &&
-    globalTokenExpiresOn > new Date(Date.now() + 2 * 60 * 1000) // 2 min buffer
-  ) {
-    return;
+  // Check if using SQL authentication (no token) or Azure AD (with token)
+  const usingSqlAuth = process.env.MSSQL_CONNECTION_STRING ||
+                       (process.env.SQL_USER && process.env.SQL_PASSWORD);
+
+  if (usingSqlAuth) {
+    // SQL authentication - just check if pool is connected
+    if (globalSqlPool && globalSqlPool.connected) {
+      return;
+    }
+
+    // Create new connection
+    const { config } = await createSqlConfig();
+
+    // Close old pool if exists
+    if (globalSqlPool && globalSqlPool.connected) {
+      await globalSqlPool.close();
+    }
+
+    globalSqlPool = await sql.connect(config);
+  } else {
+    // Azure AD authentication - check token expiry
+    if (
+      globalSqlPool &&
+      globalSqlPool.connected &&
+      globalAccessToken &&
+      globalTokenExpiresOn &&
+      globalTokenExpiresOn > new Date(Date.now() + 2 * 60 * 1000) // 2 min buffer
+    ) {
+      return;
+    }
+
+    // Get a new token and reconnect
+    const { config, token, expiresOn } = await createSqlConfig();
+    globalAccessToken = token;
+    globalTokenExpiresOn = expiresOn;
+
+    // Close old pool if exists
+    if (globalSqlPool && globalSqlPool.connected) {
+      await globalSqlPool.close();
+    }
+
+    globalSqlPool = await sql.connect(config);
   }
-
-  // Otherwise, get a new token and reconnect
-  const { config, token, expiresOn } = await createSqlConfig();
-  globalAccessToken = token;
-  globalTokenExpiresOn = expiresOn;
-
-  // Close old pool if exists
-  if (globalSqlPool && globalSqlPool.connected) {
-    await globalSqlPool.close();
-  }
-
-  globalSqlPool = await sql.connect(config);
 }
 
 // Patch all tool handlers to ensure SQL connection before running
