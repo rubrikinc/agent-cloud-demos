@@ -6,11 +6,16 @@ Get the customer support agent running with MCP server integration in 5 minutes.
 
 - Python 3.8+
 - Node.js 16+
-- MSSQL Server or Azure SQL Database
+- A running MS SQL Server or MS SQL as a Service (AWS, Azure, GCP, etc.)
 - ODBC Driver 18 for SQL Server
 
 ## Step 1: Install Dependencies
 
+### Create a new python virtual environment (optional but recommended)
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows, use: .venv\Scripts\activate
+```
 ### Python Dependencies
 ```bash
 pip install -r requirements.txt
@@ -69,6 +74,12 @@ The MCP server uses a **three-tier priority system** for database authentication
 **💡 Tip**: Use Priority 1 (ODBC connection string) for the simplest configuration. All settings are in one place and it's consistent with Python's pyodbc usage.
 
 ## Step 3: Set Up Database
+
+### Create a database if needed:
+
+```sql
+CREATE DATABASE Customer_Orders_DB;
+```
 
 ### Create Orders Table
 ```bash
