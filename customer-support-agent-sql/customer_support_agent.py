@@ -12,6 +12,7 @@ import subprocess
 from typing import Annotated, Dict, Any
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, START
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -205,12 +206,77 @@ class State(TypedDict):
 
 
 def create_customer_support_agent():
-    llm = ChatOpenAI(
-        model=os.environ["OPENAI_MODEL"],
-        base_url=os.environ["OPENAI_ENDPOINT"],
-        api_key=os.environ["OPENAI_API_KEY"],
-        temperature=0
-    )
+    # Get LLM provider from environment variable (default to "openai")
+    llm_provider = os.environ.get("LLM_PROVIDER", "openai").lower()
+
+    # Initialize the appropriate LLM based on the provider
+    if llm_provider == "anthropic":
+        # Anthropic configuration
+        anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not anthropic_api_key:
+            raise ValueError(
+                "ANTHROPIC_API_KEY environment variable is required when LLM_PROVIDER='anthropic'. "
+                "Please set it in your .env file."
+            )
+
+        anthropic_model = os.environ.get("ANTHROPIC_MODEL")
+        if not anthropic_model:
+            raise ValueError(
+                "ANTHROPIC_MODEL environment variable is required when LLM_PROVIDER='anthropic'. "
+                "Please set it in your .env file (e.g., 'claude-3-7-sonnet-20250219')."
+            )
+
+        # Optional: Anthropic endpoint (defaults to https://api.anthropic.com)
+        anthropic_endpoint = os.environ.get("ANTHROPIC_ENDPOINT")
+
+        llm_kwargs = {
+            "model": anthropic_model,
+            "api_key": anthropic_api_key,
+            "temperature": 0
+        }
+
+        if anthropic_endpoint:
+            llm_kwargs["anthropic_api_url"] = anthropic_endpoint
+        print(f"LLM KQwargs: {llm_kwargs}")
+        llm = ChatAnthropic(**llm_kwargs)
+
+    elif llm_provider == "openai":
+        # OpenAI configuration
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise ValueError(
+                "OPENAI_API_KEY environment variable is required when LLM_PROVIDER='openai'. "
+                "Please set it in your .env file."
+            )
+
+        openai_model = os.environ.get("OPENAI_MODEL")
+        if not openai_model:
+            raise ValueError(
+                "OPENAI_MODEL environment variable is required when LLM_PROVIDER='openai'. "
+                "Please set it in your .env file."
+            )
+
+        openai_endpoint = os.environ.get("OPENAI_ENDPOINT")
+        if not openai_endpoint:
+            raise ValueError(
+                "OPENAI_ENDPOINT environment variable is required when LLM_PROVIDER='openai'. "
+                "Please set it in your .env file."
+            )
+
+        llm = ChatOpenAI(
+            model=openai_model,
+            base_url=openai_endpoint,
+            api_key=openai_api_key,
+            temperature=0
+        )
+    else:
+        raise ValueError(
+            f"Invalid LLM_PROVIDER: '{llm_provider}'. "
+            "Valid options are 'openai' or 'anthropic'. "
+            "Please update your .env file."
+        )
+
+    print(f"Using LLM provider: {llm_provider}")
 
     tools = [
         get_order_status,
@@ -220,15 +286,19 @@ def create_customer_support_agent():
 
     llm_with_tools = llm.bind_tools(tools)
 
-    system_message = """You are a helpful customer support agent for an e-commerce company.
+    system_message = """You are an agent called `ACME Customer Support Agent v2`. 
 
-You have access to several tools to help customers:
-- get_order_status: Look up order information from the database
-- search_knowledge_base: Search help articles from the knowledge base
-- refund_order: Process refunds by updating order status in the database
+    You are a helpful customer support agent for an e-commerce company.
 
-These tools interact with a real database through an MCP (Model Context Protocol) server.
-Use these tools to help customers with their inquiries. Be friendly and professional."""
+    You have access to several tools to help customers:
+    - get_order_status: Look up order information from the AWS RDS MS SQL database
+    - search_knowledge_base: Search help articles from the AWS RDS MS SQL knowledge base
+    - refund_order: Process refunds by updating order status in the AWS RDS MS SQL database
+
+    These tools interact with a real database through an MCP (Model Context Protocol) server.
+    Use these tools to help customers with their inquiries. Be friendly and professional.
+
+    The MCP server interacts with an MS SQL Server database running on AWS RDS."""
 
     def chatbot(state: State):
         """The main chatbot node that calls the LLM."""
@@ -278,7 +348,7 @@ if __name__ == "__main__":
   
     result = agent.invoke({
         "messages": [("user", "What's the status of order ORD-00051?")]
-    #    "messages": [("user", "Refund order ORD-00051 because it's the wrong color")]
+    #    "messages": [("user", "Refund order ORD-00052 because it's the wrong color")]
     })
     
     # Extract the final message
