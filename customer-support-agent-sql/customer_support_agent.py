@@ -237,7 +237,6 @@ def create_customer_support_agent():
 
         if anthropic_endpoint:
             llm_kwargs["anthropic_api_url"] = anthropic_endpoint
-        print(f"LLM KQwargs: {llm_kwargs}")
         llm = ChatAnthropic(**llm_kwargs)
 
     elif llm_provider == "openai":
