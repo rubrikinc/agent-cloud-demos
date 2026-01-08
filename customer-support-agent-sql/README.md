@@ -4,18 +4,21 @@ Get the customer support agent running with MCP server integration in 5 minutes.
 
 ## Prerequisites
 
-- Python 3.8+
-- Node.js 16+
+- Python 3.9+
+- Node.js 22.21.1+
 - A running MS SQL Server or MS SQL as a Service (AWS, Azure, GCP, etc.)
 - ODBC Driver 18 for SQL Server
 
-## Step 1: Install Dependencies
+## Step 1: Create Python Virtual Environment
 
-### Create a new python virtual environment (optional but recommended)
+Create a new Python virtual environment in `.venv`:
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # On Windows, use: .venv\Scripts\activate
 ```
+
+## Step 2: Install Dependencies
+
 ### Python Dependencies
 ```bash
 pip install -r requirements.txt
@@ -29,7 +32,7 @@ npm run build
 cd ../..
 ```
 
-## Step 2: Configure Environment
+## Step 3: Configure Environment
 
 Create a `.env` file:
 ```bash
@@ -73,7 +76,7 @@ The MCP server uses a **three-tier priority system** for database authentication
 
 **💡 Tip**: Use Priority 1 (ODBC connection string) for the simplest configuration. All settings are in one place and it's consistent with Python's pyodbc usage.
 
-## Step 3: Set Up Database
+## Step 4: Set Up Database
 
 ### Create a database if needed:
 
@@ -95,7 +98,7 @@ python setup_knowledge_base.py
 
 This creates a `knowledge_base` table with customer support articles.
 
-## Step 4: Test MCP Integration
+## Step 5: Test MCP Integration
 
 ```bash
 python test_mcp_integration.py
@@ -111,7 +114,7 @@ Passed: 3/3
 ✅ All tests passed!
 ```
 
-## Step 5: Run the Agent
+## Step 6: Run the Agent
 
 ```bash
 python customer_support_agent.py
@@ -288,7 +291,7 @@ python test_mcp_integration.py
 ### "No valid response from MCP server"
 **Solution**: Check Node.js is installed
 ```bash
-node --version  # Should be 16+
+node --version  # Should be 22.21.1+
 ```
 
 ### "MCP server call timed out"
