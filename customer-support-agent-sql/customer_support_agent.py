@@ -234,9 +234,14 @@ def create_customer_support_agent():
             "api_key": anthropic_api_key,
             "temperature": 0
         }
+        print(f"Using Anthropic model: {anthropic_model}")
 
         if anthropic_endpoint:
             llm_kwargs["anthropic_api_url"] = anthropic_endpoint
+            print(f"Using Anthropic endpoint: {anthropic_endpoint}")
+        else:
+            print("Using default Anthropic endpoint: https://api.anthropic.com")
+
         llm = ChatAnthropic(**llm_kwargs)
 
     elif llm_provider == "openai":
@@ -261,6 +266,8 @@ def create_customer_support_agent():
                 "OPENAI_ENDPOINT environment variable is required when LLM_PROVIDER='openai'. "
                 "Please set it in your .env file."
             )
+        print(f"Using OpenAI model: {openai_model}.")
+        print(f"Using OpenAI endpoint: {openai_endpoint}")
 
         llm = ChatOpenAI(
             model=openai_model,
