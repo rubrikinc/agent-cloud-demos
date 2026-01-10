@@ -1,0 +1,259 @@
+{
+  "name": "M365DataProtector - Anthropic",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "remove AWS key from onedrive\n\nThe FILE_ID needed by the OneDrive delete tool comes from the ID field of the files returned from the Ondrive search tool.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        512,
+        128
+      ],
+      "id": "e0816d4e-13ef-4795-a6af-c83ff98fe7e8",
+      "name": "M365 Data Protector"
+    },
+    {
+      "parameters": {
+        "content": "## Agent Objective\n##### 🔐 **Remove** unencrypted **AWS keys** from **OneDrive**\n",
+        "height": 80,
+        "width": 416,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "594f502b-2ce7-4937-84e3-500ca7126519",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        528,
+        352
+      ],
+      "id": "f545c656-b183-4685-a3ed-d914eaf34178",
+      "name": "Search",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "fileId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        640,
+        352
+      ],
+      "id": "66fc1ef4-ec89-4b3b-a876-463a601c34f3",
+      "name": "Delete",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_ID', ``, 'string') }}",
+        "binaryPropertyName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Put_Output_File_in_Field', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        768,
+        352
+      ],
+      "id": "69130ad7-2581-4514-8764-0a54565145b4",
+      "name": "Download",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_Name', ``, 'string') }}",
+        "parentId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Parent_ID', ``, 'string') }}",
+        "fileContent": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_Content', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        896,
+        352
+      ],
+      "id": "da80476c-fc87-4242-a780-ce6f4be1d48c",
+      "name": "Upload",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        128
+      ],
+      "id": "7924a745-3c64-426c-b7d0-28384fc99ae6",
+      "name": "Trigger"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{(+new Date).toString(36).slice(-8)}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        352
+      ],
+      "id": "263b858b-6901-472c-8a32-3d5ec7ea8730",
+      "name": "Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-3-haiku-20240307",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        352
+      ],
+      "id": "bb708f87-a75e-4e56-9ec3-90c958207f9b",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": ""
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "3d1e34a4-beec-4076-b324-d301b88c4f35",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "542eaaf74411211c9440da8401e96910ba38f60fdba8f52935406ba8675f369e"
+  },
+  "id": "mJwOrpVBmvHKZdbsG5dHN",
+  "tags": []
+}

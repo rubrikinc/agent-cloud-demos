@@ -1,0 +1,264 @@
+{
+  "name": "M365DataProtector",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "remove AWS key from onedrive",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        0
+      ],
+      "id": "cab2cc09-3c27-4f49-90ac-daced1bcf3dd",
+      "name": "M365 Data Protector"
+    },
+    {
+      "parameters": {
+        "content": "## Agent Objective\n##### 🔐 **Remove** unencrypted **AWS keys** from **OneDrive**\n",
+        "height": 80,
+        "width": 416,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -128
+      ],
+      "id": "701cc1fa-1243-4d99-b095-161c140bafd5",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        848,
+        224
+      ],
+      "id": "fe8fd687-3491-4f67-bffb-2f36629d136f",
+      "name": "Search",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "fileId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        976,
+        224
+      ],
+      "id": "552d4b98-262e-4949-94d2-d118f9958a31",
+      "name": "Delete",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_ID', ``, 'string') }}",
+        "binaryPropertyName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Put_Output_File_in_Field', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        224
+      ],
+      "id": "4ef16bec-1ba0-4df6-acc9-2dae100c6374",
+      "name": "Download",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_Name', ``, 'string') }}",
+        "parentId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Parent_ID', ``, 'string') }}",
+        "fileContent": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('File_Content', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDriveTool",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        224
+      ],
+      "id": "ef67bf6e-5b38-4b26-b8e1-d68aa62713ae",
+      "name": "Upload",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        368,
+        0
+      ],
+      "id": "1419c34c-f465-4465-8447-265650d8edf4",
+      "name": "Trigger"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{(+new Date).toString(36).slice(-8)}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        224
+      ],
+      "id": "d8259f38-6a6d-45ad-8837-2186a7cf1c47",
+      "name": "Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        224
+      ],
+      "id": "b8a18156-6b5c-4019-b800-33cd1a266bbe",
+      "name": "Router",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": ""
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "M365 Data Protector": {
+      "main": [
+        []
+      ]
+    },
+    "Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload": {
+      "ai_tool": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "M365 Data Protector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "458c0dae-7f34-4bb7-919e-a4621d53cf6b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7d83cb685a131730cb993c36678d0215ef24711a3b9b047861e8fb853ea285a8"
+  },
+  "id": "IypDb8R7mNlEQGn6",
+  "tags": []
+}
