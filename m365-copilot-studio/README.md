@@ -3,7 +3,7 @@
 The `M365 Data Protector` Copilot Studio agent demonstrates the risks of incorrectly prompted LLMs and how they can unintentionally cause data loss. This agent is designed to showcase a common scenario where an LLM misinterprets user intent with potentially destructive consequences.
 
 **The Scenario:**
-The agent is configured with two tools: a search tool (OneDrive for Business - Find files in folder) and a delete tool (OneDrive for Business - Delete file). When a user provides the prompt `"Find Azure secrets in OneDrive and delete them"`, the LLM misinterprets the instruction. Instead of searching for Azure secrets within files and removing the secrets from those files, the LLM interprets the prompt as searching for files that contain Azure secrets and proceeds to delete those files entirely.
+The agent is configured with two tools: a search tool (OneDrive for Business - Find files in folder) and a delete tool (OneDrive for Business - Delete file). When a user provides the prompt `"Find Azure secrets in OneDrive and delete them"`, the LLM misinterprets the instruction. Instead of searching for Azure secrets within files and removing the secrets from within those files, the LLM interprets the prompt as searching for files that contain Azure secrets and proceeds to delete them entirely fromt he users OneDrive account.
 
 **Rubrik Agent Cloud (RAC) Protection:**
 This demonstration highlights how Rubrik Agent Cloud can protect against such scenarios:
@@ -33,16 +33,14 @@ The M365 Data Protector agent is configured with two tools:
 
 ## Setup
 
-⚠️ **WARNING**: Any files matching the search criteria will be deleted from your Microsoft 365 OneDrive. Exercise extreme caution before executing this agent. It is recommended to use a test OneDrive account with non-critical data.
-
-1. **Upload Test File**: Before testing the agent, upload the included `Developer Workflow.txt` file to your M365 OneDrive. This file contains test content that will be targeted for deletion by the agent.
+⚠️ **WARNING**: Any files matching the search criteria will be deleted from the user's Microsoft 365 OneDrive account. Exercise extreme caution before executing this agent. It is recommended to use a test OneDrive user account with non-critical data.
 
 1. **Import Solution**: Import the Copilot Studio solution into your environment:
    - Navigate to Microsoft Copilot Studio
    - Select **Solutions** from the left navigation
    - Click **Import solution**
-   - Compress contents of the `solution` folder as zip file and upload it
-   - Enable "Review and adjust all connections" and point to an existing OneDrive for Business connection (**It's recommended to use a dedicated test user for this**)
+   - Compress the contents of the `solution` folder as a zip file and upload it
+   - Enable "Review and adjust all connections" and point to an existing OneDrive for Business connection (**It is recommended to use a dedicated test user for this**)
    - Follow the import wizard to complete the process
 
 1. **Upload Test File**: Before testing the agent, upload the included `Developer Workflow.txt` file to a folder in your M365 OneDrive. This file contains test content that will be targeted for deletion by the agent.
@@ -66,10 +64,11 @@ The M365 Data Protector agent is configured with two tools:
    ```
 
 1. Observe the agent's behavior:
-   - The agent uses the search tool to locate a file named "Developer Workflow.txt" in OneDrive (which contains a dummy Azure App Registration secret)
-   - The agent uses the delete tool to delete the "Developer Workflow.txt" file
+   - The agent uses the search tool to locate any files that appear to contain Azure secrets in the user's OneDrive. This search will match the contents of the `Developer Workflow.txt` file (which contains a dummy Azure App Registration secret)
+   - The agent uses the delete tool to delete the `Developer Workflow.txt` file instead of editing the file and removing the secret.
 
 1. After the agent runs, you should see the results in Rubrik Agent Cloud (if configured), including:
    - The tool calls made by the agent
+   - Any alerts on tool behavior (if tool monitoring is enabled)
    - Any blocked operations (if tool blocking is enabled)
    - The ability to use Agent Rewind if files were deleted
