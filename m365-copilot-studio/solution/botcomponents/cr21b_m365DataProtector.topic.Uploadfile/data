@@ -1,0 +1,26 @@
+kind: AdaptiveDialog
+beginDialog:
+  kind: OnPlanComplete
+  id: main
+  actions:
+    - kind: BeginDialog
+      id: HlcZ8r
+      input: {}
+      dialog: cr21b_m365DataProtector.action.OneDriveforBusiness-Createfile
+      output:
+        binding:
+          DisplayName: Topic.DisplayName
+          ETag: Topic.ETag
+          FileLocator: Topic.FileLocator
+          Id: Topic.Id
+          IsFolder: Topic.IsFolder
+          LastModified: Topic.LastModified
+          LastModifiedBy: Topic.LastModifiedBy
+          MediaType: Topic.MediaType
+          Name: Topic.Name
+          NameNoExt: Topic.NameNoExt
+          Path: Topic.Path
+          Size: Topic.Size
+
+inputType: {}
+outputType: {}

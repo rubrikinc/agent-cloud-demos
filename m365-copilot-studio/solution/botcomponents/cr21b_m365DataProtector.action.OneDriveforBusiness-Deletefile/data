@@ -1,0 +1,15 @@
+kind: TaskDialog
+modelDisplayName: Delete file
+modelDescription: This operation deletes a file.
+outputs:
+  - propertyName: Response
+
+action:
+  kind: InvokeConnectorTaskAction
+  connectionReference: cr21b_m365DataProtector.shared_onedriveforbusiness.3eaa3a60837c4df1b0e14a73e775959f
+  connectionProperties:
+    mode: Invoker
+
+  operationId: DeleteFile
+
+outputMode: All

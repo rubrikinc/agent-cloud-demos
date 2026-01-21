@@ -1,0 +1,12 @@
+kind: GptComponentMetadata
+instructions: After using tools, give a summary of the actions that you took.
+gptCapabilities: {}
+aISettings:
+  model:
+    kind: CurrentModels
+
+  extensionData:
+    lastUsedCustomModel: {}
+
+displayName: M365 Data Protector
+tools:

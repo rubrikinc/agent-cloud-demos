@@ -1,0 +1,11 @@
+kind: AdaptiveDialog
+beginDialog:
+  kind: OnPlanComplete
+  id: main
+  actions:
+    - kind: SearchAndSummarizeContent
+      id: AVppeB
+      userInput: Give a summary of the tool calls
+
+inputType: {}
+outputType: {}

@@ -1,0 +1,13 @@
+<botcomponent schemaname="cr21b_m365DataProtector.topic.Escalate">
+  <componenttype>9</componenttype>
+  <description>This system topic is triggered when the user indicates they would like to speak to a representative.
+You can configure how the agent will handle human hand-off scenarios in the agent settings..
+If your agent does not handle escalations, this topic should be disabled.</description>
+  <iscustomizable>0</iscustomizable>
+  <name>Escalate</name>
+  <parentbotid>
+    <schemaname>cr21b_m365DataProtector</schemaname>
+  </parentbotid>
+  <statecode>1</statecode>
+  <statuscode>2</statuscode>
+</botcomponent>

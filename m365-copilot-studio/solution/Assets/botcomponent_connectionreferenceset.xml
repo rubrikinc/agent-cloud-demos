@@ -1,0 +1,8 @@
+<botcomponent_connectionreferenceset>
+  <botcomponent_connectionreference botcomponentid.schemaname="cr21b_m365DataProtector.action.OneDriveforBusiness-Deletefile" connectionreferenceid.connectionreferencelogicalname="cr21b_m365DataProtector.shared_onedriveforbusiness.3eaa3a60837c4df1b0e14a73e775959f">
+    <iscustomizable>1</iscustomizable>
+  </botcomponent_connectionreference>
+  <botcomponent_connectionreference botcomponentid.schemaname="cr21b_m365DataProtector.action.OneDriveforBusiness-Findfilesinfolder" connectionreferenceid.connectionreferencelogicalname="cr21b_m365DataProtector.shared_onedriveforbusiness.3eaa3a60837c4df1b0e14a73e775959f">
+    <iscustomizable>1</iscustomizable>
+  </botcomponent_connectionreference>
+</botcomponent_connectionreferenceset>
