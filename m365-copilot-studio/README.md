@@ -39,7 +39,7 @@ The M365 Data Protector agent is configured with two tools:
    - Navigate to Microsoft Copilot Studio
    - Select **Solutions** from the left navigation
    - Click **Import solution**
-   - Compress the contents of the `solution` folder as a zip file and upload it
+   - Upload the `solution.zip` file
    - Enable "Review and adjust all connections" and point to an existing OneDrive for Business connection (**It is recommended to use a dedicated test user for this**)
    - Follow the import wizard to complete the process
 

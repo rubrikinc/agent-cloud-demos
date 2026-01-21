@@ -1,9 +1,0 @@
-<botcomponent schemaname="cr21b_m365DataProtector.BotSettingsComponent.Feedback">
-  <componenttype>18</componenttype>
-  <iscustomizable>0</iscustomizable>
-  <parentbotid>
-    <schemaname>cr21b_m365DataProtector</schemaname>
-  </parentbotid>
-  <statecode>0</statecode>
-  <statuscode>1</statuscode>
-</botcomponent>
