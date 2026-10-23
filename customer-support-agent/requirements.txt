@@ -1,4 +1,4 @@
-litellm[proxy]>=1.0.0
+litellm[proxy]==1.106.2
 langchain>=0.3.0
 langchain-openai>=0.2.0
 langchain-core>=0.3.0
